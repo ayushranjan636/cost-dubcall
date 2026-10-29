@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DubCall Rate Checker</title>
+<meta name="description" content="Check DubCall AI calling rates for your use cases. Pay for results, not minutes. All prices include GST.">
+<link rel="icon" href="/logo.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Black, grey and white. Layout: a three-page wizard (details, requirements, rates) on the left, plan cards on the right. */
+:root {
+  --bg: #F3F3F3; --surface: #FFFFFF; --ink: #0B0B0B; --muted: #5E5E5E; --line: #D9D9D9;
+  --accent: #0B0B0B; --accent-ink: #FFFFFF; --accent-soft: #EBEBEB;
+  --warn: #B3261E; --logo-filter: none;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0B0B0B; --surface: #161616; --ink: #F2F2F2; --muted: #9C9C9C; --line: #2C2C2C;
+  --accent: #F2F2F2; --accent-ink: #0B0B0B; --accent-soft: #232323;
+  --warn: #FF8A80; --logo-filter: invert(1); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0B0B0B; --surface: #161616; --ink: #F2F2F2; --muted: #9C9C9C; --line: #2C2C2C;
+  --accent: #F2F2F2; --accent-ink: #0B0B0B; --accent-soft: #232323;
+  --warn: #FF8A80; --logo-filter: invert(1); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.consent { font-size: 12px; color: var(--muted); margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1140px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+.num { font-variant-numeric: tabular-nums; }
+
+.top { padding-block: 28px 8px; display: grid; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.logo { height: 34px; width: auto; filter: var(--logo-filter); display: block; }
+.brand span { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding-left: 12px; border-left: 1px solid var(--line); }
+.top h1 { font-size: clamp(28px, 4.5vw, 40px); line-height: 1.1; }
+.top p { margin: 0; color: var(--muted); max-width: 62ch; }
+
+.progress { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; padding: 0; list-style: none; counter-reset: s; }
+.progress li { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.progress li + li::before { content: ""; width: 24px; height: 1px; background: var(--line); }
+.progress .dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--line); background: var(--surface); }
+.progress li.on { color: var(--ink); font-weight: 600; }
+.progress li.on .dot, .progress li.done .dot { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; padding-block: 16px 40px; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px; display: grid; gap: 18px; min-width: 0; }
+.panel-head { display: grid; gap: 4px; }
+.panel-head h2 { font-size: 24px; }
+.hint { color: var(--muted); font-size: 14px; margin: 0; }
+
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 560px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field > span, .q { font-size: 13px; font-weight: 600; }
+.req { color: var(--warn); }
+input[type=text], input[type=email], input[type=tel], input[type=number], select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; }
+input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--warn); }
+.err { color: var(--warn); font-size: 12px; min-height: 0; }
+input:focus-visible, select:focus-visible, button:focus-visible, .pill input:focus-visible + span, .uc input:focus-visible ~ .uc-body { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { position: relative; }
+.pill input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.pill span { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; background: var(--bg); cursor: pointer; }
+.pill input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+.groups { display: grid; gap: 20px; }
+.group { border: 0; padding: 0; margin: 0; display: grid; min-width: 0; }
+.group legend { font-family: var(--f-display); font-weight: 600; font-size: 16px; padding: 0; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.core { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); }
+.uc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 640px) { .uc-grid { grid-template-columns: minmax(0, 1fr); } }
+.uc { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: var(--surface); }
+.uc:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.uc input { margin: 3px 0 0; accent-color: var(--accent); width: 16px; height: 16px; }
+.uc-body { display: grid; gap: 2px; min-width: 0; }
+.uc-name { font-weight: 600; font-size: 14px; }
+.uc-res { font-size: 13px; color: var(--muted); }
+details.more summary { cursor: pointer; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+details.more[open] summary { margin-bottom: 16px; }
+.divider { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+.nav { display: flex; gap: 10px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+button { font: inherit; font-weight: 600; border-radius: 8px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.status { font-size: 13px; color: var(--muted); margin: 0; min-height: 1.2em; }
+
+/* Plans */
+.plans { display: grid; gap: 10px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+@media (max-width: 900px) { .plans { position: static; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .plans { grid-template-columns: minmax(0, 1fr); } }
+.plans-head { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+@media (max-width: 900px) { .plans-head { grid-column: 1 / -1; } }
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 4px; }
+.plan.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; background: var(--accent-soft); }
+.plan-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.plan h3 { font-size: 17px; }
+.plan .tag { font-size: 11px; font-family: var(--f-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink); }
+.plan .fee { font-family: var(--f-display); font-size: 24px; font-weight: 700; }
+.plan .fee small { font-family: var(--f-body); font-size: 13px; font-weight: 400; color: var(--muted); }
+.plan p { margin: 0; font-size: 13px; color: var(--muted); }
+.plans-note { font-size: 12px; color: var(--muted); margin: 0; }
+@media (max-width: 900px) { .plans-note { grid-column: 1 / -1; } }
+
+/* Results */
+.hero-plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .hero-plan { grid-template-columns: minmax(0, 1fr); } }
+.stat { background: var(--accent-soft); border-radius: 10px; padding: 14px; display: grid; gap: 2px; }
+.stat small { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat strong { font-family: var(--f-display); font-size: 22px; }
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; background: var(--bg); }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.r b { font-family: var(--f-mono); }
+td small { color: var(--muted); display: block; }
+.terms { display: grid; gap: 6px; margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+.who { font-size: 14px; color: var(--muted); margin: 0; }
+@media (prefers-reduced-motion: no-preference) { .uc, .plan, .pill span { transition: background-color .15s, border-color .15s; } }
+</style>
+</head>
+<body>
+
+<header class="wrap top">
+  <div class="brand"><img class="logo" id="logoImg" alt="DubCall" width="155" height="34" src="/logo.webp"><span>AI Voice Employees</span></div>
+  <h1>Check your AI calling rates</h1>
+  <p>Pay for results, not minutes. Tell us about your business and what you need, and see your plan and price per result. Banking, NBFC and insurance are our core, and every industry below is supported.</p>
+  <ol class="progress" id="progress">
+    <li data-step="1"><span class="dot">1</span>Your details</li>
+    <li data-step="2"><span class="dot">2</span>Requirements</li>
+    <li data-step="3"><span class="dot">3</span>Your rates</li>
+  </ol>
+</header>
+
+<main class="wrap layout">
+  <div>
+    <!-- Page 1 -->
+    <form class="panel" id="p1" novalidate>
+      <div class="panel-head"><h2>Your details</h2><p class="hint">We use these to prepare your rate sheet. Fields marked * are required.</p></div>
+      <div class="grid2">
+        <label class="field"><span>Full name <span class="req">*</span></span><input type="text" id="contact" autocomplete="name"><span class="err" id="e-contact"></span></label>
+        <label class="field"><span>Company name <span class="req">*</span></span><input type="text" id="company" autocomplete="organization"><span class="err" id="e-company"></span></label>
+        <label class="field"><span>Work email <span class="req">*</span></span><input type="email" id="email" autocomplete="email" placeholder="name@company.com"><span class="err" id="e-email"></span></label>
+        <label class="field"><span>Phone <span class="req">*</span></span><input type="tel" id="phone" autocomplete="tel" placeholder="+91 98xxx xxxxx"><span class="err" id="e-phone"></span></label>
+        <label class="field"><span>Designation</span><input type="text" id="role" placeholder="e.g. Head of Collections"></label>
+        <label class="field"><span>City</span><input type="text" id="city" autocomplete="address-level2"></label>
+        <label class="field"><span>Industry <span class="req">*</span></span>
+          <select id="industry">
+            <option value="">Select your industry</option>
+            <option value="nbfc">NBFC / digital lender</option>
+            <option value="bank">Bank</option>
+            <option value="ins">Insurance</option>
+            <option value="dca">Collection agency</option>
+            <option value="mfi">Microfinance</option>
+            <option value="ecom">E-commerce &amp; D2C</option>
+            <option value="health">Healthcare</option>
+            <option value="realty">Real estate</option>
+            <option value="edu">Education</option>
+            <option value="travel">Travel &amp; hospitality</option>
+            <option value="logistics">Logistics</option>
+            <option value="hr">HR &amp; recruitment</option>
+            <option value="other">Other</option>
+          </select><span class="err" id="e-industry"></span>
+        </label>
+        <label class="field"><span>Company size</span>
+          <select id="size"><option>1–50 employees</option><option>51–200 employees</option><option>201–1,000 employees</option><option>1,000+ employees</option></select>
+        </label>
+      </div>
+      <div class="hp" aria-hidden="true"><label for="website">Website</label><input type="text" id="website" tabindex="-1" autocomplete="off"></div>
+      <p class="consent">By continuing, you agree that DubCall may contact you about this enquiry.</p>
+      <div class="nav"><span></span><button type="submit" class="primary">Next: requirements</button></div>
+    </form>
+
+    <!-- Page 2 -->
+    <form class="panel" id="p2" novalidate hidden>
+      <div class="panel-head"><h2>Your requirements</h2><p class="hint">Pick every use case you need. Your plan and rates depend on your total picked-up calls a month.</p></div>
+      <div class="groups" id="groupsMain"></div>
+      <details class="more"><summary>More industries</summary><div class="groups" id="groupsMore"></div></details>
+      <span class="err" id="e-uc"></span>
+      <hr class="divider">
+      <div class="grid2">
+        <label class="field"><span>Expected picked-up calls per month <span class="req">*</span></span><input type="number" id="calls" min="0" step="500" placeholder="e.g. 20000"><span class="err" id="e-calls"></span></label>
+        <label class="field" id="salesField" hidden><span>Sales calling: connected minutes per month</span><input type="number" id="salesMin" min="0" step="1000" placeholder="e.g. 30000"></label>
+        <div class="field"><span class="q" id="dirQ">Call direction</span>
+          <div class="pills" role="radiogroup" aria-labelledby="dirQ">
+            <label class="pill"><input type="radio" name="dir" id="dir-out" value="Outbound"><span>Outbound</span></label>
+            <label class="pill"><input type="radio" name="dir" id="dir-in" value="Inbound"><span>Inbound</span></label>
+            <label class="pill"><input type="radio" name="dir" id="dir-both" value="Both" checked><span>Both</span></label>
+          </div>
+        </div>
+        <label class="field"><span>System to connect</span>
+          <select id="crm"><option>LMS / LOS (custom, via API)</option><option>Salesforce</option><option>HubSpot</option><option>Zoho CRM</option><option>LeadSquared</option><option>Other CRM</option><option>None yet</option></select>
+        </label>
+      </div>
+      <div class="field"><span class="q" id="langQ">Languages your customers speak <span class="hint">(same price for every language)</span></span><div class="pills" id="langs" aria-labelledby="langQ"></div></div>
+      <p class="hint">You call from your own phone numbers or SIP trunk; telephony is not part of DubCall pricing.</p>
+      <div class="nav"><button type="button" id="back2">Back</button><button type="submit" class="primary">See my rates</button></div>
+    </form>
+
+    <!-- Page 3 -->
+    <section class="panel" id="p3" hidden aria-labelledby="p3h">
+      <div class="panel-head"><h2 id="p3h">Your rates</h2><p class="who" id="who"></p></div>
+      <div class="hero-plan">
+        <div class="stat"><small>Your plan</small><strong id="rPlan">–</strong></div>
+        <div class="stat"><small>Monthly plan fee</small><strong class="num" id="rFee">–</strong></div>
+        <div class="stat"><small>Picked-up calls / month</small><strong class="num" id="rCalls">–</strong></div>
+      </div>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>Use case</th><th>You pay when</th><th class="r">Rate (incl. GST)</th></tr></thead>
+          <tbody id="rBody"></tbody>
+        </table>
+      </div>
+      <ul class="terms">
+        <li>All prices include GST.</li>
+        <li>First 100 calls are free as your pilot.</li>
+        <li>Unanswered, busy and under-10-second calls: ₹0. A picked-up call over 10 seconds with no result: ₹3.</li>
+        <li>A call with a result is billed at its result rate only; the ₹3 is not added on top.</li>
+        <li>Sales calling is billed per connected minute: ₹7 up to 25,000 min, ₹6 up to 1 lakh, ₹5 up to 5 lakh, ₹4.5 above.</li>
+        <li>Calls run on your own numbers or SIP trunk; telephony is not included.</li>
+        <li>Every billed result is backed by a call recording and a record in your LMS, LOS or CRM.</li>
+      </ul>
+      <div class="nav">
+        <button type="button" id="back3">Edit requirements</button>
+        <button type="button" class="primary" id="pdfBtn">Download rates as PDF</button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </section>
+  </div>
+
+  <aside class="plans" aria-label="Plans">
+    <div class="plans-head">Plans · prices incl. GST</div>
+    <div class="plan" data-plan="low"><div class="plan-top"><h3>Starter</h3><span class="tag"></span></div><div class="fee">₹4,999<small> / month</small></div><p>Under 10,000 picked-up calls a month. Upper rate per result.</p></div>
+    <div class="plan" data-plan="avg"><div class="plan-top"><h3>Growth</h3><span class="tag"></span></div><div class="fee">₹9,999<small> / month</small></div><p>10,000–50,000 calls a month. Average rate per result.</p></div>
+    <div class="plan" data-plan="high"><div class="plan-top"><h3>Scale</h3><span class="tag"></span></div><div class="fee">₹19,999<small> / month</small></div><p>Over 50,000 calls a month. Lowest rate per result.</p></div>
+    <p class="plans-note">Every plan: first 100 calls free, ₹0 for unanswered calls, ₹3 for a picked-up call over 10 seconds with no result.</p>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const GROUPS = [
+  {id:'bfsi', name:'Banking, NBFC & insurance', core:true},
+  {id:'ecom', name:'E-commerce & D2C'}, {id:'health', name:'Healthcare'}, {id:'realty', name:'Real estate'},
+  {id:'edu', name:'Education'}, {id:'travel', name:'Travel & hospitality'}, {id:'logistics', name:'Logistics'},
+  {id:'hr', name:'HR & recruitment'}, {id:'any', name:'Any industry'}, {id:'sales', name:'Sales calling'}
+];
+const UC = [
+  {id:'emi',  g:'bfsi', name:'EMI pre-due reminder', result:'Borrower acknowledges due date or payment plan', lo:8, hi:10},
+  {id:'ptp1', g:'bfsi', name:'Collections, 1–30 DPD', result:'Promise-to-pay with amount and date written to LMS', lo:45, hi:60},
+  {id:'ptp2', g:'bfsi', name:'Collections, 31–60 DPD', result:'Promise-to-pay with amount and date written to LMS', lo:75, hi:110},
+  {id:'ptp3', g:'bfsi', name:'Collections, 61–90 DPD', result:'Promise-to-pay with amount and date written to LMS', lo:120, hi:175},
+  {id:'paid', g:'bfsi', name:'Payment realised (add-on)', result:'Payment received inside the promise-to-pay window', lo:20, hi:40, unit:'per payment'},
+  {id:'kyc',  g:'bfsi', name:'KYC / re-KYC', result:'Verification marked complete in CBS or LOS', lo:35, hi:60},
+  {id:'loan', g:'bfsi', name:'Loan application follow-up', result:'Case moves a stage: documents uploaded or visit booked', lo:40, hi:80},
+  {id:'insr', g:'bfsi', name:'Insurance renewal', result:'Renewal commitment captured', lo:75, hi:120},
+  {id:'svc',  g:'bfsi', name:'Borrower / policyholder servicing', result:'Query resolved or service request raised', lo:25, hi:75},
+  {id:'cod',  g:'ecom', name:'COD confirmation', result:'Order verified or cancelled before dispatch', lo:5, hi:8},
+  {id:'ndr',  g:'ecom', name:'Failed delivery (NDR)', result:'Re-attempt slot or address confirmed', lo:6, hi:10},
+  {id:'prepaid', g:'ecom', name:'COD to prepaid', result:'Customer pays online after the call', lo:15, hi:25},
+  {id:'appt', g:'health', name:'Appointment reminder', result:'Appointment confirmed or rescheduled', lo:8, hi:12},
+  {id:'newpt', g:'health', name:'New patient booking', result:'Appointment booked in your system', lo:60, hi:120},
+  {id:'visit', g:'realty', name:'Inbound lead follow-up', result:'Site visit booked', lo:150, hi:300},
+  {id:'couns', g:'edu', name:'Admissions enquiry', result:'Counselling session or demo booked', lo:60, hi:120},
+  {id:'fee',  g:'edu', name:'Fee reminder', result:'Payment date acknowledged', lo:6, hi:10},
+  {id:'book', g:'travel', name:'Booking reminder', result:'Booking confirmed or modified', lo:8, hi:12},
+  {id:'slot', g:'logistics', name:'Delivery coordination', result:'Delivery slot confirmed', lo:5, hi:8},
+  {id:'screen', g:'hr', name:'Candidate screening', result:'Screened and interview scheduled', lo:40, hi:80},
+  {id:'t1',   g:'any', name:'Customer support, Tier 1', result:'Query resolved, no repeat call in 48 hours', lo:25, hi:40},
+  {id:'t2',   g:'any', name:'Customer support, Tier 2', result:'Action completed: refund, reversal or ticket closed', lo:50, hi:75},
+  {id:'esc',  g:'any', name:'Escalation to your team (add-on)', result:'Warm handoff to a human with full context', lo:10, hi:10, unit:'per handoff'},
+  {id:'survey', g:'any', name:'Survey / NPS / feedback', result:'All questions answered', lo:15, hi:25},
+  {id:'sales', g:'sales', name:'Sales and outbound lead calling', result:'Billed per connected minute, not per result', sales:true}
+];
+const IND_GROUP = {nbfc:'bfsi', bank:'bfsi', ins:'bfsi', dca:'bfsi', mfi:'bfsi', ecom:'ecom', health:'health', realty:'realty', edu:'edu', travel:'travel', logistics:'logistics', hr:'hr', other:'any'};
+const LANGS = ['Hindi','English','Tamil','Telugu','Kannada','Malayalam','Bengali','Marathi','Gujarati','Punjabi','Odia','Other'];
+const PLANS = {low:{name:'Starter', fee:4999, range:'under 10,000 calls/month', rule:'upper rate'}, avg:{name:'Growth', fee:9999, range:'10,000–50,000 calls/month', rule:'average rate'}, high:{name:'Scale', fee:19999, range:'over 50,000 calls/month', rule:'lowest rate'}};
+const SALES_TIERS = [{max:25000, rate:7}, {max:100000, rate:6}, {max:500000, rate:5}, {max:Infinity, rate:4.5}];
+const byId = Object.fromEntries(UC.map(u => [u.id, u]));
+const $ = id => document.getElementById(id);
+const inr = new Intl.NumberFormat('en-IN', {maximumFractionDigits: 2});
+const rupee = v => '₹' + inr.format(v);
+
+const state = {step: 1, selected: new Set(), langs: new Set(['Hindi', 'English'])};
+
+function n(v) { const x = Number(v); return Number.isFinite(x) && x > 0 ? x : 0; }
+function tierFor(calls) { return calls < 10000 ? 'low' : (calls <= 50000 ? 'avg' : 'high'); }
+function rateFor(u, tier) { return tier === 'low' ? u.hi : tier === 'high' ? u.lo : Math.round(u.lo + u.hi) / 2; }
+function salesRate(min) { return SALES_TIERS.find(t => min <= t.max).rate; }
+
+function go(step) {
+  state.step = step;
+  [1, 2, 3].forEach(i => { $('p' + i).hidden = i !== step; });
+  document.querySelectorAll('#progress li').forEach(li => {
+    const s = Number(li.dataset.step);
+    li.classList.toggle('on', s === step); li.classList.toggle('done', s < step);
+    if (s === step) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+  });
+  const h = $('p' + step).querySelector('h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({preventScroll: true}); }
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function setErr(id, msg) {
+  const el = $('e-' + id); if (el) el.textContent = msg || '';
+  const inp = $(id); if (inp) inp.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  return !msg;
+}
+
+$('p1').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = $('email').value.trim(), phone = $('phone').value.replace(/\D/g, '');
+  const ok = [
+    setErr('contact', $('contact').value.trim() ? '' : 'Enter your name.'),
+    setErr('company', $('company').value.trim() ? '' : 'Enter your company name.'),
+    setErr('email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? '' : 'Enter a valid email, like name@company.com.'),
+    setErr('phone', phone.length >= 10 ? '' : 'Enter a phone number with at least 10 digits.'),
+    setErr('industry', $('industry').value ? '' : 'Select your industry.')
+  ].every(Boolean);
+  if (!ok) { const first = document.querySelector('#p1 [aria-invalid="true"]'); if (first) first.focus(); return; }
+  sendLead('Details submitted'); renderGroups(); go(2);
+});
+
+$('p2').addEventListener('submit', e => {
+  e.preventDefault();
+  const ucOk = state.selected.size > 0;
+  $('e-uc').textContent = ucOk ? '' : 'Pick at least one use case.';
+  const onlySales = state.selected.size === 1 && state.selected.has('sales');
+  const callsOk = setErr('calls', onlySales || n($('calls').value) > 0 ? '' : 'Enter your expected picked-up calls per month.');
+  if (!ucOk || !callsOk) return;
+  renderRates(); sendLead('Rates viewed'); go(3);
+});
+$('back2').addEventListener('click', () => go(1));
+$('back3').addEventListener('click', () => go(2));
+
+function renderLangs() {
+  $('langs').innerHTML = '';
+  LANGS.forEach(l => {
+    const lab = document.createElement('label'); lab.className = 'pill';
+    const inp = document.createElement('input'); inp.type = 'checkbox'; inp.id = 'lang-' + l.toLowerCase(); inp.checked = state.langs.has(l);
+    inp.addEventListener('change', () => { inp.checked ? state.langs.add(l) : state.langs.delete(l); });
+    const sp = document.createElement('span'); sp.textContent = l;
+    lab.append(inp, sp); $('langs').append(lab);
+  });
+}
+
+function ucCard(u) {
+  const lab = document.createElement('label'); lab.className = 'uc';
+  const inp = document.createElement('input'); inp.type = 'checkbox'; inp.id = 'uc-' + u.id; inp.checked = state.selected.has(u.id);
+  const body = document.createElement('span'); body.className = 'uc-body';
+  const nm = document.createElement('span'); nm.className = 'uc-name'; nm.textContent = u.name;
+  const rs = document.createElement('span'); rs.className = 'uc-res'; rs.textContent = u.result;
+  body.append(nm, rs); lab.append(inp, body);
+  inp.addEventListener('change', () => {
+    inp.checked ? state.selected.add(u.id) : state.selected.delete(u.id);
+    $('salesField').hidden = !state.selected.has('sales');
+    if (state.selected.size) $('e-uc').textContent = '';
+    updatePlanCards();
+  });
+  return lab;
+}
+
+function renderGroups() {
+  const primary = IND_GROUP[$('industry').value] || 'any';
+  const main = [primary]; if (primary !== 'bfsi') main.push('bfsi'); main.push('any', 'sales');
+  const ids = main.filter((v, i, a) => a.indexOf(v) === i);
+  const mk = g => {
+    const fs = document.createElement('fieldset'); fs.className = 'group';
+    const lg = document.createElement('legend'); lg.textContent = g.name;
+    if (g.core) { const c = document.createElement('span'); c.className = 'core'; c.textContent = 'Core focus'; lg.append(c); }
+    const grid = document.createElement('div'); grid.className = 'uc-grid';
+    UC.filter(u => u.g === g.id).forEach(u => grid.append(ucCard(u)));
+    fs.append(lg, grid); return fs;
+  };
+  $('groupsMain').innerHTML = ''; $('groupsMore').innerHTML = '';
+  ids.forEach(id => $('groupsMain').append(mk(GROUPS.find(g => g.id === id))));
+  GROUPS.filter(g => !ids.includes(g.id)).forEach(g => $('groupsMore').append(mk(g)));
+}
+
+function currentTier() { const c = n($('calls').value); return c ? tierFor(c) : null; }
+function updatePlanCards() {
+  const t = currentTier();
+  document.querySelectorAll('.plan').forEach(p => {
+    const on = p.dataset.plan === t; p.classList.toggle('on', on);
+    p.querySelector('.tag').textContent = on ? 'Your plan' : '';
+  });
+}
+$('calls').addEventListener('input', () => { if (n($('calls').value)) setErr('calls', ''); updatePlanCards(); });
+
+function rateRows() {
+  const tier = currentTier() || 'low';
+  const salesMin = n($('salesMin').value);
+  return UC.filter(u => state.selected.has(u.id)).map(u => {
+    if (u.sales) return {u, rate: salesRate(salesMin), unit: 'per connected minute'};
+    return {u, rate: rateFor(u, tier), unit: u.unit || 'per result'};
+  });
+}
+
+function lead() {
+  const dir = document.querySelector('input[name="dir"]:checked');
+  return {
+    contact: $('contact').value.trim(), company: $('company').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(),
+    role: $('role').value.trim(), city: $('city').value.trim(), industry: $('industry').selectedOptions[0].textContent, size: $('size').value,
+    dir: dir ? dir.value : '', crm: $('crm').value, langs: [...state.langs].join(', ') || 'Not specified'
+  };
+}
+
+function renderRates() {
+  const d = lead(), calls = n($('calls').value), tier = currentTier() || 'low', plan = PLANS[tier];
+  $('who').textContent = `Prepared for ${d.contact}, ${d.company} · ${d.industry}`;
+  $('rPlan').textContent = plan.name;
+  $('rFee').textContent = rupee(plan.fee) + ' / mo';
+  $('rCalls').textContent = calls ? inr.format(calls) : '–';
+  const body = $('rBody'); body.innerHTML = '';
+  rateRows().forEach(r => {
+    const tr = document.createElement('tr');
+    const a = document.createElement('td'); a.textContent = r.u.name;
+    const b = document.createElement('td'); b.textContent = r.u.result;
+    const c = document.createElement('td'); c.className = 'r';
+    const bb = document.createElement('b'); bb.textContent = rupee(r.rate);
+    const sm = document.createElement('small'); sm.textContent = r.unit;
+    c.append(bb, sm); tr.append(a, b, c); body.append(tr);
+  });
+  updatePlanCards();
+}
+
+/* PDF */
+let whiteLogo = null;
+(async () => {
+  try {
+    const img = $('logoImg'); await img.decode();
+    const c = document.createElement('canvas'); c.width = 400; c.height = 88;
+    const x = c.getContext('2d'); x.drawImage(img, 0, 0, 400, 88);
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = '#ffffff'; x.fillRect(0, 0, 400, 88);
+    whiteLogo = c.toDataURL('image/png');
+  } catch (e) { whiteLogo = null; }
+})();
+function rs(v) { return 'Rs. ' + inr.format(v); }
+function buildPdf() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit: 'pt', format: 'a4'});
+  const d = lead(), calls = n($('calls').value), tier = currentTier() || 'low', plan = PLANS[tier];
+  const W = doc.internal.pageSize.getWidth(), M = 40;
+  const green = [11, 11, 11], ink = [11, 11, 11], muted = [94, 94, 94];
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-IN', {day: 'numeric', month: 'long', year: 'numeric'});
+
+  doc.setFillColor(...green); doc.rect(0, 0, W, 72, 'F');
+  doc.setTextColor(255, 255, 255);
+  if (whiteLogo) doc.addImage(whiteLogo, 'PNG', M, 16, 110, 24); else { doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.text('DubCall', M, 34); }
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.text('Rate sheet: pay for results, not minutes', M, 58);
+  doc.text(dateStr, W - M, 34, {align: 'right'}); doc.text('All prices include GST', W - M, 54, {align: 'right'});
+
+  doc.autoTable({
+    startY: 90, margin: {left: M, right: M}, theme: 'plain',
+    styles: {fontSize: 10, cellPadding: 3, textColor: ink},
+    columnStyles: {0: {fontStyle: 'bold', cellWidth: 95}, 2: {fontStyle: 'bold', cellWidth: 105}},
+    body: [
+      ['Prepared for', d.contact + (d.role ? ', ' + d.role : ''), 'Industry', d.industry],
+      ['Company', d.company, 'Company size', d.size],
+      ['Email', d.email, 'Call direction', d.dir],
+      ['Phone', d.phone, 'System to connect', d.crm],
+      ['City', d.city || '-', 'Languages', d.langs]
+    ]
+  });
+
+  let y = doc.lastAutoTable.finalY + 16;
+  doc.setFillColor(236, 236, 236); doc.roundedRect(M, y, W - 2 * M, 58, 4, 4, 'F');
+  const col = (W - 2 * M) / 3;
+  [['YOUR PLAN', plan.name], ['MONTHLY PLAN FEE', rs(plan.fee)], ['PICKED-UP CALLS / MONTH', calls ? inr.format(calls) : '-']].forEach(([k, v], i) => {
+    const x = M + 14 + i * col;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...muted); doc.text(k, x, y + 20);
+    doc.setFontSize(16); doc.setTextColor(...ink); doc.text(v, x, y + 44);
+  });
+
+  y += 76;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...ink); doc.text('Your rates', M, y);
+  doc.autoTable({
+    startY: y + 8, margin: {left: M, right: M},
+    head: [['Use case', 'You pay when', 'Rate (incl. GST)']],
+    body: rateRows().map(r => [r.u.name, r.u.result, rs(r.rate) + '\n' + r.unit]),
+    styles: {fontSize: 9.5, cellPadding: 6, textColor: ink, lineColor: [220, 220, 220], lineWidth: 0.5, valign: 'top'},
+    headStyles: {fillColor: green, textColor: 255, fontStyle: 'bold'},
+    columnStyles: {0: {cellWidth: 160, fontStyle: 'bold'}, 2: {halign: 'right', cellWidth: 110}},
+    alternateRowStyles: {fillColor: [245, 245, 245]}
+  });
+
+  y = doc.lastAutoTable.finalY + 16;
+  doc.autoTable({
+    startY: y, margin: {left: M, right: M}, theme: 'plain',
+    head: [['Plans (incl. GST)', 'Monthly fee', 'Picked-up calls a month', 'Rate applied']],
+    body: Object.entries(PLANS).map(([k, p]) => [p.name + (k === tier ? '  (your plan)' : ''), rs(p.fee), p.range.replace(' calls/month', ''), p.rule]),
+    styles: {fontSize: 9.5, cellPadding: 4, textColor: ink},
+    headStyles: {fontStyle: 'bold', textColor: muted, fontSize: 9},
+    didParseCell: data => { if (data.section === 'body' && Object.keys(PLANS)[data.row.index] === tier) data.cell.styles.fontStyle = 'bold'; }
+  });
+
+  y = doc.lastAutoTable.finalY + 14;
+  const terms = [
+    'All prices include GST.',
+    'First 100 calls are free as your pilot.',
+    'Unanswered, busy and under-10-second calls: Rs. 0. A picked-up call over 10 seconds with no result: Rs. 3.',
+    'A call with a result is billed at its result rate only; the Rs. 3 is not added on top.',
+    'Sales calling is billed per connected minute: Rs. 7 up to 25,000 min, Rs. 6 up to 1 lakh, Rs. 5 up to 5 lakh, Rs. 4.5 above.',
+    'Calls run on your own numbers or SIP trunk; telephony is not included.',
+    'Every billed result is backed by a call recording and a record in your LMS, LOS or CRM. Statements are monthly.',
+    'Indicative rates based on the volume you entered; final rates are confirmed after the pilot.'
+  ];
+  doc.autoTable({
+    startY: y, margin: {left: M, right: M}, theme: 'plain',
+    head: [['How billing works']], headStyles: {fontStyle: 'bold', fontSize: 12, textColor: ink},
+    styles: {fontSize: 9, cellPadding: {top: 2, bottom: 2, left: 0, right: 0}, textColor: muted},
+    body: terms.map((t, i) => [(i + 1) + '. ' + t])
+  });
+
+  const pages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p); doc.setFontSize(8); doc.setTextColor(...muted);
+    const H = doc.internal.pageSize.getHeight();
+    doc.text('DubCall by NextSens Global Pvt. Ltd. · dubcall.com · support@dubcall.com', M, H - 20);
+    doc.text(`Page ${p} of ${pages}`, W - M, H - 20, {align: 'right'});
+  }
+  const slug = d.company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'rates';
+  return {blob: doc.output('blob'), filename: `DubCall-rates-${slug}-${today.toISOString().slice(0, 10)}.pdf`};
+}
+
+function setStatus(m) { $('status').textContent = m; }
+
+/* Lead capture: one row per visitor in Google Sheets, updated as they move through the steps */
+const LEAD_ID = (crypto.randomUUID ? crypto.randomUUID() : 'L' + Date.now() + Math.random().toString(16).slice(2));
+const STARTED_AT = Date.now();
+function leadPayload(stage) {
+  const d = lead();
+  const calls = n($('calls').value), tier = currentTier();
+  const plan = tier ? PLANS[tier] : null;
+  const rows = state.selected.size ? rateRows() : [];
+  return {
+    leadId: LEAD_ID, stage, website: $('website').value, elapsedMs: Date.now() - STARTED_AT,
+    name: d.contact, company: d.company, email: d.email, phone: d.phone, designation: d.role, city: d.city,
+    industry: d.industry, companySize: d.size, callDirection: d.dir, crm: d.crm, languages: d.langs,
+    useCases: rows.map(r => r.u.name).join(', '),
+    callsPerMonth: calls || '', salesMinutesPerMonth: state.selected.has('sales') ? n($('salesMin').value) || '' : '',
+    plan: plan ? plan.name : '', planFee: plan ? plan.fee : '',
+    rates: rows.map(r => `${r.u.name}: Rs ${r.rate} ${r.unit}`).join(' | '),
+    page: location.href
+  };
+}
+function sendLead(stage) {
+  try {
+    fetch('/api/lead', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(leadPayload(stage)), keepalive: true})
+      .then(r => { if (!r.ok) console.warn('Lead not saved', r.status); })
+      .catch(e => console.warn('Lead not saved', e));
+  } catch (e) { console.warn('Lead not saved', e); }
+}
+
+$('pdfBtn').addEventListener('click', () => {
+  if (!window.jspdf) { setStatus('The PDF tool did not load. Check your connection and reload the page.'); return; }
+  try {
+    const file = buildPdf();
+    const url = URL.createObjectURL(file.blob);
+    const a = document.createElement('a'); a.href = url; a.download = file.filename;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    setStatus('Rate sheet downloaded.');
+    sendLead('PDF downloaded');
+  } catch (e) { setStatus('The PDF could not be built. Reload the page and try again.'); }
+});
+
+$('industry').addEventListener('change', () => { if ($('industry').value) setErr('industry', ''); });
+['contact', 'company', 'email', 'phone'].forEach(id => $(id).addEventListener('input', () => setErr(id, '')));
+renderLangs(); renderGroups(); go(1); window.scrollTo(0, 0);
+</script>
+</body>
+</html>
